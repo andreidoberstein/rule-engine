@@ -1,0 +1,118 @@
+
+> temp_nest@0.0.1 start:dev
+> nest start --watch
+
+[2J[3J[H[[90m17:00:42[0m] Starting compilation in watch mode...
+
+[[90m17:00:45[0m] Found 0 errors. Watching for file changes.
+
+[32m[Nest] 18612  - [39m10/03/2026, 17:00:46 [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 18612  - [39m10/03/2026, 17:00:46 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +10ms[39m
+[32m[Nest] 18612  - [39m10/03/2026, 17:00:46 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPrismaModule dependencies initialized[39m[38;5;3m +13ms[39m
+[32m[Nest] 18612  - [39m10/03/2026, 17:00:46 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mUsersModule dependencies initialized[39m[38;5;3m +14ms[39m
+[32m[Nest] 18612  - [39m10/03/2026, 17:00:46 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAuthModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 18612  - [39m10/03/2026, 17:00:46 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mUsersController {/users}:[39m[38;5;3m +18ms[39m
+[32m[Nest] 18612  - [39m10/03/2026, 17:00:46 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/users, POST} route[39m[38;5;3m +3ms[39m
+[32m[Nest] 18612  - [39m10/03/2026, 17:00:46 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/users, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 18612  - [39m10/03/2026, 17:00:46 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/users/:id, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 18612  - [39m10/03/2026, 17:00:46 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/users/:id, PATCH} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 18612  - [39m10/03/2026, 17:00:46 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/users/:id, DELETE} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 18612  - [39m10/03/2026, 17:00:46 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAuthController {/auth}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 18612  - [39m10/03/2026, 17:00:46 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/auth/login, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 18612  - [39m10/03/2026, 17:00:46 [32m    LOG[39m [38;5;3m[NestApplication] [39m[32mNest application successfully started[39m[38;5;3m +63ms[39m
+[31m[Nest] 18612  - [39m10/03/2026, 17:00:50 [31m  ERROR[39m [38;5;3m[ExceptionsHandler] [39mPrismaClientValidationError: 
+Invalid `this.prisma.user.create()` invocation in
+C:\dev\smollan-e2e\backend\src\modules\users\infrastructure\repositories\prisma-users.repository.ts:11:41
+
+   8 constructor(private readonly prisma: PrismaService) {}
+   9 
+  10 async create(data: Omit<UserEntity, 'id' | 'created_at' | 'updated_at'>): Promise<UserEntity> {
+→ 11   const user = await this.prisma.user.create({
+         data: {
+           name: "Admin Test",
+           email: "admin@test.com",
+           role: "ADMIN",
+           is_active: true,
+       +   password: String
+         }
+       })
+
+Argument `password` is missing.
+    at throwValidationException [90m(C:\dev\smollan-e2e\backend\[39mnode_modules\[4m@prisma[24m\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9[90m)[39m
+    at ei.handleRequestError [90m(C:\dev\smollan-e2e\backend\[39mnode_modules\[4m@prisma[24m\client\src\runtime\RequestHandler.ts:202:7[90m)[39m
+    at ei.handleAndLogRequestError [90m(C:\dev\smollan-e2e\backend\[39mnode_modules\[4m@prisma[24m\client\src\runtime\RequestHandler.ts:174:12[90m)[39m
+    at ei.request [90m(C:\dev\smollan-e2e\backend\[39mnode_modules\[4m@prisma[24m\client\src\runtime\RequestHandler.ts:143:12[90m)[39m
+    at async a [90m(C:\dev\smollan-e2e\backend\[39mnode_modules\[4m@prisma[24m\client\src\runtime\getPrismaClient.ts:833:24[90m)[39m
+    at async PrismaUsersRepository.create [90m(C:\dev\smollan-e2e\backend\[39msrc\modules\users\infrastructure\repositories\prisma-users.repository.ts:11:18[90m)[39m
+    at async [90mC:\dev\smollan-e2e\backend\[39mnode_modules\[4m@nestjs[24m\core\router\router-execution-context.js:46:28
+    at async [90mC:\dev\smollan-e2e\backend\[39mnode_modules\[4m@nestjs[24m\core\router\router-proxy.js:9:17 {
+  clientVersion: [32m'6.19.2'[39m
+}
+[2J[3J[H[[90m17:01:15[0m] File change detected. Starting incremental compilation...
+
+[96msrc/modules/users/application/services/users.service.ts[0m:[93m16[0m:[93m34[0m - [91merror[0m[90m TS2552: [0mCannot find name 'bcrypt'. Did you mean 'crypto'?
+
+[7m16[0m     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+[7m  [0m [91m                                 ~~~~~~[0m
+
+  [96mnode_modules/typescript/lib/lib.dom.d.ts[0m:[93m39121[0m:[93m13[0m
+    [7m39121[0m declare var crypto: Crypto;
+    [7m     [0m [96m            ~~~~~~[0m
+    'crypto' is declared here.
+
+[[90m17:01:15[0m] Found 1 error. Watching for file changes.
+
+[2J[3J[H[[90m17:01:40[0m] File change detected. Starting incremental compilation...
+
+[[90m17:01:41[0m] Found 0 errors. Watching for file changes.
+
+[32m[Nest] 18292  - [39m10/03/2026, 17:01:42 [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 18292  - [39m10/03/2026, 17:01:42 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +13ms[39m
+[32m[Nest] 18292  - [39m10/03/2026, 17:01:42 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPrismaModule dependencies initialized[39m[38;5;3m +13ms[39m
+[32m[Nest] 18292  - [39m10/03/2026, 17:01:42 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mUsersModule dependencies initialized[39m[38;5;3m +14ms[39m
+[32m[Nest] 18292  - [39m10/03/2026, 17:01:42 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAuthModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 18292  - [39m10/03/2026, 17:01:42 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mUsersController {/users}:[39m[38;5;3m +19ms[39m
+[32m[Nest] 18292  - [39m10/03/2026, 17:01:42 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/users, POST} route[39m[38;5;3m +3ms[39m
+[32m[Nest] 18292  - [39m10/03/2026, 17:01:42 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/users, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 18292  - [39m10/03/2026, 17:01:42 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/users/:id, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 18292  - [39m10/03/2026, 17:01:42 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/users/:id, PATCH} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 18292  - [39m10/03/2026, 17:01:42 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/users/:id, DELETE} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 18292  - [39m10/03/2026, 17:01:42 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAuthController {/auth}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 18292  - [39m10/03/2026, 17:01:42 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/auth/login, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 18292  - [39m10/03/2026, 17:01:42 [32m    LOG[39m [38;5;3m[NestApplication] [39m[32mNest application successfully started[39m[38;5;3m +97ms[39m
+[2J[3J[H[[90m17:08:12[0m] File change detected. Starting incremental compilation...
+
+[[90m17:08:15[0m] Found 0 errors. Watching for file changes.
+
+node:internal/modules/cjs/loader:1404
+  throw err;
+  ^
+
+Error: Cannot find module '.prisma/client/default'
+Require stack:
+- C:\dev\smollan-e2e\backend\node_modules\@prisma\client\default.js
+- C:\dev\smollan-e2e\backend\dist\infrastructure\database\prisma\prisma.service.js
+- C:\dev\smollan-e2e\backend\dist\infrastructure\database\prisma\prisma.module.js
+- C:\dev\smollan-e2e\backend\dist\app.module.js
+- C:\dev\smollan-e2e\backend\dist\main.js
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1401:15)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1057:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1062:22)
+    at Function._load (node:internal/modules/cjs/loader:1211:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at Object.<anonymous> (C:\dev\smollan-e2e\backend\node_modules\@prisma\client\default.js:2:6)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    'C:\\dev\\smollan-e2e\\backend\\node_modules\\@prisma\\client\\default.js',
+    'C:\\dev\\smollan-e2e\\backend\\dist\\infrastructure\\database\\prisma\\prisma.service.js',
+    'C:\\dev\\smollan-e2e\\backend\\dist\\infrastructure\\database\\prisma\\prisma.module.js',
+    'C:\\dev\\smollan-e2e\\backend\\dist\\app.module.js',
+    'C:\\dev\\smollan-e2e\\backend\\dist\\main.js'
+  ]
+}
+
+Node.js v22.16.0

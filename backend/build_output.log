@@ -1,0 +1,38 @@
+
+> temp_nest@0.0.1 build
+> nest build
+
+[96msrc/modules/auth/application/services/auth.service.ts[0m:[93m10[0m:[93m42[0m - [91merror[0m[90m TS2339: [0mProperty 'findByEmail' does not exist on type 'UsersService'.
+
+[7m10[0m     const user = await this.usersService.findByEmail(loginDto.email);
+[7m  [0m [91m                                         ~~~~~~~~~~~[0m
+[96msrc/modules/auth/application/services/auth.service.ts[0m:[93m16[0m:[93m35[0m - [91merror[0m[90m TS2552: [0mCannot find name 'bcrypt'. Did you mean 'crypto'?
+
+[7m16[0m     const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
+[7m  [0m [91m                                  ~~~~~~[0m
+
+  [96mnode_modules/typescript/lib/lib.dom.d.ts[0m:[93m39121[0m:[93m13[0m
+    [7m39121[0m declare var crypto: Crypto;
+    [7m     [0m [96m            ~~~~~~[0m
+    'crypto' is declared here.
+[96msrc/modules/auth/application/services/auth.service.ts[0m:[93m16[0m:[93m59[0m - [91merror[0m[90m TS2339: [0mProperty 'password' does not exist on type 'LoginDto'.
+
+[7m16[0m     const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
+[7m  [0m [91m                                                          ~~~~~~~~[0m
+[96msrc/modules/users/infrastructure/repositories/prisma-users.repository.ts[0m:[93m11[0m:[93m50[0m - [91merror[0m[90m TS2322: [0mType 'Omit<UserEntity, "id" | "created_at" | "updated_at">' is not assignable to type '(Without<UserCreateInput, UserUncheckedCreateInput> & UserUncheckedCreateInput) | (Without<...> & UserCreateInput)'.
+  Type 'Omit<UserEntity, "id" | "created_at" | "updated_at">' is not assignable to type 'Without<UserUncheckedCreateInput, UserCreateInput> & UserCreateInput'.
+    Type 'Omit<UserEntity, "id" | "created_at" | "updated_at">' is not assignable to type 'UserCreateInput'.
+      Types of property 'password' are incompatible.
+        Type 'string | undefined' is not assignable to type 'string'.
+          Type 'undefined' is not assignable to type 'string'.
+
+[7m11[0m     const user = await this.prisma.user.create({ data });
+[7m  [0m [91m                                                 ~~~~[0m
+
+  [96mnode_modules/.prisma/client/index.d.ts[0m:[93m1745[0m:[93m5[0m
+    [7m1745[0m     data: XOR<UserCreateInput, UserUncheckedCreateInput>
+    [7m    [0m [96m    ~~~~[0m
+    The expected type comes from property 'data' which is declared here on type '{ select?: UserSelect<DefaultArgs> | null | undefined; omit?: UserOmit<DefaultArgs> | null | undefined; data: (Without<UserCreateInput, UserUncheckedCreateInput> & UserUncheckedCreateInput) | (Without<...> & UserCreateInput); }'
+
+Found 4 error(s).
+
