@@ -15,6 +15,9 @@ interface BudgetRole {
 
 export default function BudgetsCreate() {
   const navigate = useNavigate();
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : null;
+
   const [step, setStep] = useState(1);
   const [isSimulating, setIsSimulating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -169,6 +172,7 @@ export default function BudgetsCreate() {
       const payload = {
         client_id: selectedClient,
         status: 'DRAFT',
+        user_id: user?.id,
         dates: '2024 - 2025',
         total: budgetTotal,
         roles: simulatedData.map(roleData => ({

@@ -67,10 +67,11 @@ export class BudgetsController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete a budget' })
+  @ApiOperation({ summary: 'Delete a budget (Soft Delete)' })
+  @ApiQuery({ name: 'user_id', required: true, type: String, description: 'ID of the user making the request' })
   @ApiResponse({ status: 200, description: 'The budget has been successfully deleted.' })
   @ApiResponse({ status: 404, description: 'Budget not found.' })
-  remove(@Param('id') id: string) {
-    return this.budgetsService.remove(id);
+  remove(@Param('id') id: string, @Query('user_id') userId: string) {
+    return this.budgetsService.remove(id, userId);
   }
 }

@@ -6,6 +6,7 @@ import Users from './pages/Users';
 import Budgets from './pages/Budgets';
 import BudgetsCreate from './pages/BudgetsCreate';
 import RulesEngine from './pages/RulesEngine';
+import AuditLogs from './pages/AuditLogs';
 import { Toaster } from 'sonner';
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
         <Route path="/budgets" element={<Budgets />} />
         <Route path="/budgets/new" element={<BudgetsCreate />} />
         <Route path="/rules-engine" element={<RulesEngine />} />
+        <Route path="/audit-logs" element={<AuditLogs />} />
       </Routes>
     </BrowserRouter>
   );

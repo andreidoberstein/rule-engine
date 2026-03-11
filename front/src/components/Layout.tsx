@@ -88,6 +88,10 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
             <Users size={18} className={isActive('/users') ? 'text-blue-400' : 'text-gray-400 group-hover:text-gray-300'} />
             <span className="font-medium text-sm">Usuários</span>
           </Link>
+          <Link to="/audit-logs" className={`w-full flex items-center gap-3 px-2 py-2.5 rounded-md transition-colors group ${isActive('/audit-logs') ? 'bg-gray-800 text-white' : 'hover:bg-gray-800 hover:text-white'}`}>
+            <ShieldAlert size={18} className={isActive('/audit-logs') ? 'text-blue-400' : 'text-gray-400 group-hover:text-gray-300'} />
+            <span className="font-medium text-sm">Trilha de Auditoria</span>
+          </Link>
           <Link to="/rules-engine" className="flex items-center justify-between px-2 py-2.5 hover:bg-gray-800 hover:text-white rounded-md transition-colors group cursor-pointer">
             <div className="flex items-center gap-3">
               <Settings size={18} className="text-gray-400 group-hover:text-gray-300" />

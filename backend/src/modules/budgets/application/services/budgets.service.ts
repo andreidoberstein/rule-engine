@@ -34,15 +34,16 @@ export class BudgetsService {
     if (!budget) {
       throw new NotFoundException(`Budget with ID ${id} not found`);
     }
-    return this.budgetsRepository.update(id, updateBudgetDto);
+    const { user_id, ...dataToUpdate } = updateBudgetDto;
+    return this.budgetsRepository.update(id, dataToUpdate, user_id);
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, userId?: string): Promise<void> {
     const budget = await this.budgetsRepository.findById(id);
     if (!budget) {
       throw new NotFoundException(`Budget with ID ${id} not found`);
     }
-    return this.budgetsRepository.delete(id);
+    return this.budgetsRepository.delete(id, userId);
   }
 
   async getVerbaTypes(): Promise<any[]> {

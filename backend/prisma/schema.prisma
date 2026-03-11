@@ -24,7 +24,9 @@ model User {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  clients Client[] @relation("UserClients")
+  clients    Client[]   @relation("UserClients")
+  audit_logs AuditLog[] @relation("UserAuditLogs")
+  budgets    Budget[]   @relation("UserBudgets")
 
   @@map("users")
 }
@@ -126,11 +128,14 @@ model Budget {
   status     String   @default("DRAFT")
   dates      String?  @db.VarChar(255)
   total      Decimal  @default(0.0) @db.Decimal(10, 2)
+  is_active  Boolean  @default(true)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+  user_id    String?  @db.Uuid
 
-  client Client       @relation(fields: [client_id], references: [id])
-  roles  BudgetRole[]
+  client     Client       @relation(fields: [client_id], references: [id])
+  created_by User?        @relation("UserBudgets", fields: [user_id], references: [id])
+  roles      BudgetRole[]
 
   @@map("budgets")
 }
@@ -167,4 +172,19 @@ model BudgetVerba {
   verba_type  VerbaType  @relation(fields: [verba_type_id], references: [id])
 
   @@map("budget_verbas")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  entity_name String   @db.VarChar(255)
+  entity_id   String   @db.Uuid
+  action      String   @db.VarChar(255)
+  old_data    Json?
+  new_data    Json?
+  user_id     String   @db.Uuid
+  created_at  DateTime @default(now())
+
+  user        User     @relation("UserAuditLogs", fields: [user_id], references: [id])
+
+  @@map("audit_logs")
 }

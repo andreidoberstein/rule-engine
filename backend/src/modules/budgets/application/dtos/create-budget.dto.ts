@@ -7,6 +7,16 @@ export class BudgetVerbaDto {
   @IsUUID()
   verba_type_id: string;
 
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  base_calc_type?: string;
+
+  @ApiPropertyOptional()
+  @IsNumber()
+  @IsOptional()
+  base_value?: number;
+
   @ApiProperty()
   @IsNumber()
   value: number;
@@ -46,6 +56,11 @@ export class CreateBudgetDto {
   @IsString()
   @IsNotEmpty()
   status: string;
+
+  @ApiPropertyOptional({ example: 'uuid', description: 'ID of the user creating the budget' })
+  @IsUUID()
+  @IsOptional()
+  user_id?: string;
 
   @ApiPropertyOptional({ example: '2024 - 2025', description: 'Budget valid dates' })
   @IsString()

@@ -5,9 +5,10 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ClientsModule } from './modules/clients/clients.module';
 import { BudgetsModule } from './modules/budgets/budgets.module';
 import { RuleTemplatesModule } from './modules/rule-templates/rule-templates.module';
+import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 
 @Module({
-  imports: [PrismaModule, UsersModule, AuthModule, ClientsModule, BudgetsModule, RuleTemplatesModule],
+  imports: [PrismaModule, UsersModule, AuthModule, ClientsModule, BudgetsModule, RuleTemplatesModule, AuditLogsModule],
   controllers: [],
   providers: [],
 })
