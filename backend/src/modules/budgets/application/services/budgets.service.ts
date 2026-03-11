@@ -71,8 +71,9 @@ export class BudgetsService {
         return {
           verba_type_id: rule.verba_type_id,
           verba_name: (rule as any).verba_type?.name,
-          calc_type: rule.calc_type,
+          base_calc_type: rule.calc_type,
           base_value: rule.value,
+          calc_type: rule.calc_type,
           headcount: role.headcount,
           total_calculated: calculatedValue
         };

@@ -22,8 +22,10 @@ export class PrismaBudgetsRepository implements IBudgetsRepository {
             verbas: {
               create: r.verbas?.map((v: any) => ({
                 verba_type_id: v.verba_type_id,
-                calc_type: v.calc_type,
-                value: v.value,
+                base_calc_type: v.base_calc_type || 'FIXED',
+                base_value: v.base_value || 0.0,
+                calc_type: v.calc_type || 'FIXED',
+                value: v.value || 0.0,
               })) || []
             }
           })) || []

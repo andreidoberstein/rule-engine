@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Search, SlidersHorizontal, Settings2, ShieldCheck, MapPin, Building2, Calculator, Save, Pencil, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import Layout from '../components/Layout';
-import { data } from 'react-router-dom';
 
 export default function RulesEngine() {
   const [rules, setRules] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [clients, setClients] = useState([]);
 
-  // Rule Form State
   const [selectedVerbaType, setSelectedVerbaType] = useState('');
   const [calcType, setCalcType] = useState('FIXED');
   const [value, setValue] = useState('');
@@ -16,40 +15,50 @@ export default function RulesEngine() {
   const [selectedState, setSelectedState] = useState('');
   const [verbaTypes, setVerbaTypes] = useState([]);
 
-  // We could fetch actual VerbaTypes here too, but we will mock them for the form structure for now
+  // Modal states
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingRule, setEditingRule] = useState<any>(null);
+  const [editForm, setEditForm] = useState({
+    verba_type_id: '',
+    calc_type: '',
+    value: '',
+    client_id: '',
+    state_uf: ''
+  });
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [ruleToDeleteId, setRuleToDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     // 1. Fetch Clients
     fetch('http://localhost:3000/clients?take=50')
       .then(res => res.json())
       .then(data => setClients(data.data || []))
-      .catch(console.error);
+      .catch(() => toast.error('Erro ao carregar clientes'));
 
     // 2. Fetch Active Rules
     fetch('http://localhost:3000/rule-templates?take=20')
       .then(async res => await res.json())
       .then(data => setRules(data.data || []))
-      .catch(console.error)
+      .catch(() => toast.error('Erro ao carregar regras'))
       .finally(() => setIsLoading(false));
     // 3. Fetch Verba Types
     fetch('http://localhost:3000/budgets/verba-types')
       .then(res => res.json())
       .then(data => setVerbaTypes(data || []))
-      .catch(console.error);
+      .catch(() => toast.error('Erro ao carregar tipos de verba'));
   }, []);
-
-  console.log(rules)
   const handleSaveRule = async () => {
-    // Basic validation
     if (!selectedVerbaType || !calcType || !value) {
-      alert('Preencha os campos obrigatórios da regra.');
+      toast.error('Preencha os campos obrigatórios da regra.');
       return;
     }
 
     const payload = {
       verba_type_id: selectedVerbaType,
       calc_type: calcType,
-      value: parseFloat(value),
+      value: calcType === 'TEXT' ? 0 : parseFloat(value),
+      text_value: calcType === 'TEXT' ? value : undefined,
       client_id: selectedClient || undefined,
       state_uf: selectedState || undefined,
     };
@@ -61,15 +70,84 @@ export default function RulesEngine() {
         body: JSON.stringify(payload)
       });
       if (res.ok) {
-        alert('Regra adicionada com sucesso!');
+        toast.success('Regra adicionada com sucesso!');
         window.location.reload();
       } else {
         const err = await res.json();
-        alert('Erro ao salvar: ' + (err.message || 'Desconhecido'));
+        toast.error('Erro ao salvar: ' + (err.message || 'Desconhecido'));
       }
     } catch (e) {
-      console.error(e);
-      alert('Erro de conexão ao salvar regra.');
+      toast.error('Erro de conexão ao salvar regra.');
+    }
+  };
+
+  const handleEditClick = (rule: any) => {
+    setEditingRule(rule);
+    setEditForm({
+      verba_type_id: rule.verba_type_id,
+      calc_type: rule.calc_type,
+      value: rule.calc_type === 'TEXT' ? (rule.text_value || '') : rule.value.toString(),
+      client_id: rule.client_id || '',
+      state_uf: rule.state_uf || ''
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateRule = async () => {
+    if (!editForm.verba_type_id || !editForm.calc_type || !editForm.value) {
+      toast.error('Preencha os campos obrigatórios da regra.');
+      return;
+    }
+
+    const payload = {
+      verba_type_id: editForm.verba_type_id,
+      calc_type: editForm.calc_type,
+      value: editForm.calc_type === 'TEXT' ? 0 : parseFloat(editForm.value),
+      text_value: editForm.calc_type === 'TEXT' ? editForm.value : undefined,
+      client_id: editForm.client_id || null,
+      state_uf: editForm.state_uf || null,
+    };
+
+    try {
+      const res = await fetch(`http://localhost:3000/rule-templates/${editingRule.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        toast.success('Regra atualizada com sucesso!');
+        setIsEditModalOpen(false);
+        window.location.reload();
+      } else {
+        const err = await res.json();
+        toast.error('Erro ao atualizar: ' + (err.message || 'Desconhecido'));
+      }
+    } catch (e) {
+      toast.error('Erro de conexão ao atualizar regra.');
+    }
+  };
+
+  const handleDeleteClick = (id: string) => {
+    setRuleToDeleteId(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!ruleToDeleteId) return;
+    try {
+      const res = await fetch(`http://localhost:3000/rule-templates/${ruleToDeleteId}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        setIsDeleteModalOpen(false);
+        setRules(rules.filter((r: any) => r.id !== ruleToDeleteId));
+        toast.success('Verba removida com sucesso!');
+      } else {
+        const err = await res.json();
+        toast.error('Erro ao excluir: ' + (err.message || 'Desconhecido'));
+      }
+    } catch (e) {
+      toast.error('Erro de conexão ao excluir regra.');
     }
   };
 
@@ -169,12 +247,18 @@ export default function RulesEngine() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Valor</label>
                   <input
                     title="input value"
-                    type="number"
-                    step="0.01"
-                    placeholder="Ex: 1200.50 ou 10 para 10%"
+                    type={calcType === "TEXT" ? "text" : "number"}
+                    {...(calcType !== "TEXT" && { step: "0.01" })}
+                    placeholder={
+                      calcType === "TEXT"
+                        ? "Digite uma descrição"
+                        : "Ex: 1200.50 ou 10 para 10%"
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 shadow-sm"
                     value={value}
-                    onChange={e => setValue(e.target.value)}
+                    onChange={e => {
+                      setValue(e.target.value)
+                    }}
                   />
                 </div>
               </div>
@@ -233,8 +317,8 @@ export default function RulesEngine() {
                       return (
                         <tr key={r.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 text-sm font-semibold text-gray-900 border-l-4 border-l-transparent hover:border-l-blue-500">
-                            { verbaTypes.map((v: any) => (
-                              <>{ v.id === r.verba_type_id ? v.name : '' }</>
+                            {verbaTypes.map((v: any) => (
+                              <>{v.id === r.verba_type_id ? v.name : ''}</>
                             ))}
                           </td>
                           <td className="px-6 py-4 text-sm">
@@ -242,8 +326,16 @@ export default function RulesEngine() {
                               <span className="inline-flex px-2 py-1 rounded bg-gray-100 text-gray-600 text-xs font-bold uppercase">Regra Global</span>
                             ) : (
                               <div className="flex flex-col gap-1">
-                                {r.client && <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded"><Building2 className="w-3 h-3" /> {r.client.client_name}</span>}
-                                {r.state_uf && <span className="inline-flex items-center gap-1 text-xs font-medium text-orange-700 bg-orange-50 px-2 py-0.5 rounded"><MapPin className="w-3 h-3" /> {r.state_uf}</span>}
+                                {r.client_id && 
+                                <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded"><Building2 className="w-3 h-3" />
+                                  {clients.map((c: any) => (
+                                    <span className=''>{ c.id == r.client_id ? c.client_name : '' }</span>
+                                  ))}
+                                </span>}
+                                {r.state_uf && 
+                                <span className="inline-flex items-center gap-1 text-xs font-medium text-orange-700 bg-orange-50 px-2 py-0.5 rounded"><MapPin className="w-3 h-3" /> 
+                                  {r.state_uf}
+                                </span>}
                               </div>
                             )}
                           </td>
@@ -251,16 +343,18 @@ export default function RulesEngine() {
                             {r.calc_type === 'FIXED' && 'R$ Fixo'}
                             {r.calc_type === 'PERCENTAGE_BASE' && '% Sal. Base'}
                             {r.calc_type === 'PERCENTAGE_TOTAL' && '% Sal. Total'}
+                            {r.calc_type === 'TEXT' && 'Descritivo'}
                           </td>
                           <td className="px-6 py-4 text-sm font-bold text-gray-900">
-                            {r.calc_type === 'FIXED' ? `R$ ${r.value}` : `${r.value}%`}
+                            {r.calc_type === 'FIXED' ? `R$ ${r.value}` :
+                              r.calc_type === 'TEXT' ? r.text_value : `${r.value}%`}
                           </td>
                           <td className="px-6 py-4 text-sm">
                             <div className="flex items-center justify-center gap-3">
-                              <button className="text-gray-400 hover:text-blue-600 transition-colors">
+                              <button onClick={() => handleEditClick(r)} className="text-gray-400 hover:text-blue-600 transition-colors">
                                 <Pencil size={18} />
                               </button>
-                              <button className="text-gray-400 hover:text-red-600 transition-colors">
+                              <button onClick={() => handleDeleteClick(r.id)} className="text-gray-400 hover:text-red-600 transition-colors">
                                 <Trash2 size={18} />
                               </button>
                             </div>
@@ -276,6 +370,139 @@ export default function RulesEngine() {
           </div>
         </div>
       </div>
+
+      {/* MODAL DE EDIÇÃO */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/80">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 w-[500px] max-w-full">
+            <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <Pencil className="w-5 h-5 text-blue-600" /> Editar Regra/Verba
+            </h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-gray-500" /> Cliente Específico
+                </label>
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 shadow-sm"
+                  value={editForm.client_id}
+                  onChange={e => setEditForm({ ...editForm, client_id: e.target.value })}
+                >
+                  <option value="">-- Regra Global (Todos os Clientes) --</option>
+                  {clients.map((c: any) => (
+                    <option key={c.id} value={c.id}>{c.client_name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-gray-500" /> Estado/Praça
+                </label>
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 shadow-sm"
+                  value={editForm.state_uf}
+                  onChange={e => setEditForm({ ...editForm, state_uf: e.target.value })}
+                >
+                  <option value="">-- Regra Global (Todos os Estados) --</option>
+                  <option value="SP">São Paulo (SP)</option>
+                  <option value="RJ">Rio de Janeiro (RJ)</option>
+                  <option value="MG">Minas Gerais (MG)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                  <SlidersHorizontal className="w-4 h-4 text-gray-500" /> Tipo de Verba
+                </label>
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 shadow-sm"
+                  value={editForm.verba_type_id}
+                  onChange={e => setEditForm({ ...editForm, verba_type_id: e.target.value })}
+                >
+                  <option value="">-- Selecione a Verba --</option>
+                  {verbaTypes.map((v: any) => (
+                    <option key={v.id} value={v.id}>{v.name} ({v.group?.name})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                  <Calculator className="w-4 h-4 text-gray-500" /> Natureza do Cálculo
+                </label>
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 shadow-sm"
+                  value={editForm.calc_type}
+                  onChange={e => setEditForm({ ...editForm, calc_type: e.target.value })}
+                >
+                  <option value="FIXED">Fixo (R$)</option>
+                  <option value="PERCENTAGE_BASE">% sobre Salário Base</option>
+                  <option value="PERCENTAGE_TOTAL">% sobre Subtotal</option>
+                  <option value="TEXT">Campo Descritivo</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Valor</label>
+                <input
+                  type={editForm.calc_type === "TEXT" ? "text" : "number"}
+                  {...(editForm.calc_type !== "TEXT" && { step: "0.01" })}
+                  placeholder={editForm.calc_type === "TEXT" ? "Digite uma descrição" : "Ex: 1200.50"}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 shadow-sm"
+                  value={editForm.value}
+                  onChange={e => setEditForm({ ...editForm, value: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="px-4 py-2 font-medium text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleUpdateRule}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
+              >
+                Salvar Alterações
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/80">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 w-[400px] max-w-full">
+            <h3 className="text-lg font-bold text-red-600 mb-4 flex items-center gap-2">
+              <Trash2 className="w-5 h-5" /> Confirmar Exclusão
+            </h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Tem certeza que deseja remover esta regra de verba? Esta ação não pode ser desfeita.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="px-4 py-2 font-medium text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors shadow-sm"
+              >
+                Sim, Remover
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </Layout>
   );
 }

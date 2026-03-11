@@ -14,9 +14,26 @@ export class PrismaUsersRepository implements IUsersRepository {
     return this.mapToEntity(user);
   }
 
-  async findAll(): Promise<UserEntity[]> {
-    const users = await this.prisma.user.findMany();
-    return users.map(user => this.mapToEntity(user));
+  async findAll(options?: { cursor?: string; take?: number }): Promise<{ data: UserEntity[], nextCursor: string | null }> {
+    const take = options?.take || 5;
+    const cursor = options?.cursor;
+
+    const users = await this.prisma.user.findMany({
+      take: take + 1,
+      ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
+      orderBy: { created_at: 'desc' }
+    });
+
+    let nextCursor: string | null = null;
+    if (users.length > take) {
+      const nextItem = users.pop();
+      nextCursor = nextItem!.id;
+    }
+
+    return {
+      data: users.map(user => this.mapToEntity(user)),
+      nextCursor,
+    };
   }
 
   async findByEmail(email: string): Promise<UserEntity | null> {

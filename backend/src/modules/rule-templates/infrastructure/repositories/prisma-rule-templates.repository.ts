@@ -39,7 +39,7 @@ export class PrismaRuleTemplatesRepository implements IRuleTemplatesRepository {
       const nextItem = rules.pop();
       nextCursor = nextItem?.id || null;
     }
-    console.log(rules.map(this.mapToEntity));
+
     return {
       data: rules.map(this.mapToEntity),
       nextCursor,

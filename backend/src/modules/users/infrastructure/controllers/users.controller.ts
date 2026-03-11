@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { UsersService } from '../../application/services/users.service';
 import { CreateUserDto } from '../../application/dtos/create-user.dto';
 import { UpdateUserDto } from '../../application/dtos/update-user.dto';
@@ -18,10 +18,16 @@ export class UsersController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List all users' })
-  @ApiResponse({ status: 200, description: 'Return all users.', type: [UserEntity] })
-  findAll() {
-    return this.usersService.findAll();
+  @ApiOperation({ summary: 'List all users (paginated)' })
+  @ApiQuery({ name: 'cursor', required: false, type: String, description: 'Cursor for pagination (User ID)' })
+  @ApiQuery({ name: 'take', required: false, type: Number, description: 'Number of records to return (Default: 5)' })
+  @ApiResponse({ status: 200, description: 'Return paginated users.' })
+  findAll(
+    @Query('cursor') cursor?: string,
+    @Query('take') take?: string,
+  ) {
+    const takeNumber = take ? parseInt(take, 10) : 5;
+    return this.usersService.findAll({ cursor, take: takeNumber });
   }
 
   @Get(':id')

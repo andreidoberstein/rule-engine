@@ -84,10 +84,10 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
             <ShieldAlert size={18} className="text-gray-400 group-hover:text-gray-300" />
             <span className="font-medium text-sm">Benefícios</span>
           </a>
-          <a href="#" className="flex items-center gap-3 px-2 py-2.5 hover:bg-gray-800 hover:text-white rounded-md transition-colors group">
-            <Users size={18} className="text-gray-400 group-hover:text-gray-300" />
+          <Link to="/users" className={`w-full flex items-center gap-3 px-2 py-2.5 rounded-md transition-colors group ${isActive('/users') ? 'bg-gray-800 text-white' : 'hover:bg-gray-800 hover:text-white'}`}>
+            <Users size={18} className={isActive('/users') ? 'text-blue-400' : 'text-gray-400 group-hover:text-gray-300'} />
             <span className="font-medium text-sm">Usuários</span>
-          </a>
+          </Link>
           <Link to="/rules-engine" className="flex items-center justify-between px-2 py-2.5 hover:bg-gray-800 hover:text-white rounded-md transition-colors group cursor-pointer">
             <div className="flex items-center gap-3">
               <Settings size={18} className="text-gray-400 group-hover:text-gray-300" />

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Search, Plus, FileText, CheckCircle2, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 import Layout from '../components/Layout';
 
 export default function Budgets() {
@@ -11,7 +12,7 @@ export default function Budgets() {
     fetch('http://localhost:3000/budgets?take=10')
       .then(res => res.json())
       .then(data => setBudgets(data.data || []))
-      .catch(console.error)
+      .catch(() => toast.error('Erro ao buscar orçamentos'))
       .finally(() => setIsLoading(false));
   }, []);
 

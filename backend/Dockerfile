@@ -8,16 +8,12 @@ COPY package.json pnpm-lock.yaml ./
 
 RUN pnpm install --frozen-lockfile
 
-# copiar schema do prisma primeiro (melhora cache)
 COPY prisma ./prisma
 
-# gerar prisma client
 RUN pnpm prisma generate
 
-# agora copiar restante
 COPY . .
 
-# build
 RUN pnpm build
 
 EXPOSE 3000

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Building2, Users, Target, Plus, Trash2, Calculator, CheckCircle2 } from 'lucide-react';
+import { Building2, Users, Target, Plus, Trash2, Calculator, CheckCircle2, Edit2, Check, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import Layout from '../components/Layout';
 
 interface BudgetRole {
@@ -28,16 +29,20 @@ export default function BudgetsCreate() {
   const [tempAreaId, setTempAreaId] = useState('');
   const [tempRoleId, setTempRoleId] = useState('');
   const [tempState, setTempState] = useState('');
+  const [verbaTypes, setVerbaTypes] = useState([]);
   const [tempHeadcount, setTempHeadcount] = useState(1);
 
   const [simulatedData, setSimulatedData] = useState<any[]>([]);
   const [budgetTotal, setBudgetTotal] = useState<number>(0);
 
+  const [editingVerba, setEditingVerba] = useState<{roleIdx: number, verbaIdx: number} | null>(null);
+  const [editVerbaForm, setEditVerbaForm] = useState({ base_calc_type: '', base_value: 0 });
+
   useEffect(() => {
     fetch('http://localhost:3000/clients?take=50')
       .then(res => res.json())
       .then(data => setClients(data.data || []))
-      .catch(console.error);
+      .catch(() => toast.error('Erro ao carregar clientes'));
 
     fetch('http://localhost:3000/budgets/reference-data')
       .then(res => res.json())
@@ -45,12 +50,15 @@ export default function BudgetsCreate() {
         setAreas(data.areas || []);
         setRolesList(data.roles || []);
       })
-      .catch(console.error);
+    fetch('http://localhost:3000/budgets/verba-types')
+      .then(res => res.json())
+      .then(data => setVerbaTypes(data || []))
+      .catch(() => toast.error('Erro ao carregar tipos de verbas'));
   }, []);
 
   const handleAddRole = () => {
     if (!tempRoleId || !tempState || tempHeadcount < 1) {
-      alert('Selecione Cargo, Estado e Quantidade de Vagas');
+      toast.error('Selecione Cargo, Estado e Quantidade de Vagas');
       return;
     }
     const roleObj = rolesList.find(r => r.id === tempRoleId);
@@ -107,11 +115,52 @@ export default function BudgetsCreate() {
 
       setStep(3);
     } catch (e) {
-      console.error(e);
-      alert('Failed to simulate budget calculations');
+      toast.error('Falha ao simular cálculos do orçamento');
     } finally {
       setIsSimulating(false);
     }
+  };
+
+  const calculateTotal = (data: any[]) => {
+    let total = 0;
+    data.forEach((r: any) => {
+      r.verbas?.forEach((v: any) => {
+        if (v.calc_type === 'FIXED' || v.base_calc_type === 'FIXED') {
+          total += v.total_calculated;
+        }
+      });
+    });
+    setBudgetTotal(total);
+  };
+
+  const handleEditVerba = (roleIdx: number, verbaIdx: number, verba: any) => {
+    setEditingVerba({ roleIdx, verbaIdx });
+    setEditVerbaForm({ 
+      base_calc_type: verba.base_calc_type || verba.calc_type, 
+      base_value: verba.base_value 
+    });
+  };
+
+  const saveVerbaEdit = () => {
+    if (!editingVerba) return;
+    
+    const newData = [...simulatedData];
+    const role = newData[editingVerba.roleIdx];
+    const verba = role.verbas[editingVerba.verbaIdx];
+    
+    verba.base_calc_type = editVerbaForm.base_calc_type;
+    verba.calc_type = editVerbaForm.base_calc_type;
+    verba.base_value = Number(editVerbaForm.base_value);
+    
+    if (verba.base_calc_type === 'FIXED') {
+      verba.total_calculated = verba.base_value * role.headcount;
+    } else {
+      verba.total_calculated = verba.base_value; // Simplification for percentages
+    }
+    
+    setSimulatedData(newData);
+    calculateTotal(newData);
+    setEditingVerba(null);
   };
 
   const handleSaveBudget = async () => {
@@ -128,6 +177,8 @@ export default function BudgetsCreate() {
           headcount: roleData.headcount,
           verbas: roleData.verbas.map((v: any) => ({
             verba_type_id: v.verba_type_id,
+            base_calc_type: v.base_calc_type || v.calc_type,
+            base_value: v.base_value,
             calc_type: v.calc_type,
             value: v.total_calculated || v.base_value
           }))
@@ -141,15 +192,14 @@ export default function BudgetsCreate() {
       });
 
       if (res.ok) {
-        alert('Orçamento salvo com sucesso!');
+        toast.success('Orçamento salvo com sucesso!');
         navigate('/budgets');
       } else {
         const err = await res.json();
-        alert('Erro ao salvar: ' + JSON.stringify(err));
+        toast.error('Erro ao salvar: ' + JSON.stringify(err));
       }
     } catch (e) {
-      console.error(e);
-      alert('Erro de conexão');
+      toast.error('Erro de conexão');
     } finally {
       setIsSaving(false);
     }
@@ -325,17 +375,62 @@ export default function BudgetsCreate() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {roleData.verbas?.map((v: any, j: number) => (
+                       
+                        {roleData.verbas?.map((v: any, j: number) => {
+                          const isEditing = editingVerba?.roleIdx === i && editingVerba?.verbaIdx === j;
+                          
+                          return (
                           <tr key={j} className="hover:bg-gray-50">
-                            <td className="px-5 py-3 font-medium text-gray-900">{v.verba_name || 'Verba'}</td>
-                            <td className="px-5 py-3 text-gray-500">
-                              {v.calc_type === 'FIXED' ? `Fixo (R$ ${v.base_value})` : `${v.base_value}% (Dinâmico)`}
+                            <td className="px-5 py-3 font-medium text-gray-900">
+                              {verbaTypes.map((vt: any) => (
+                                vt.id === v.verba_type_id ? vt.name : ''
+                              ))}
                             </td>
-                            <td className="px-5 py-3 text-right font-semibold text-gray-900">
-                              {v.calc_type === 'FIXED' ? `R$ ${v.total_calculated.toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : '-'}
+                            <td className="px-5 py-3 text-gray-500">
+                              {isEditing ? (
+                                <div className="flex items-center gap-2">
+                                  <select 
+                                    className="border rounded px-2 py-1 text-sm"
+                                    value={editVerbaForm.base_calc_type}
+                                    onChange={e => setEditVerbaForm({...editVerbaForm, base_calc_type: e.target.value})}
+                                  >
+                                    <option value="FIXED">Fixo</option>
+                                    <option value="PERCENTAGE_BASE">% Base</option>
+                                  </select>
+                                  <input 
+                                    type="number"
+                                    className="border rounded px-2 py-1 text-sm w-24"
+                                    value={editVerbaForm.base_value}
+                                    onChange={e => setEditVerbaForm({...editVerbaForm, base_value: Number(e.target.value)})}
+                                  />
+                                </div>
+                              ) : (
+                                (v.base_calc_type || v.calc_type) === 'FIXED' ? `Fixo (R$ ${v.base_value})` : `${v.base_value}% (Dinâmico)`
+                              )}
+                            </td>
+                            <td className="px-5 py-3 text-right font-semibold text-gray-900 group relative">
+                              <div className="flex items-center justify-end gap-3">
+                                <span>
+                                  {(v.base_calc_type || v.calc_type) === 'FIXED' ? `R$ ${v.total_calculated.toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : '-'}
+                                </span>
+                                {isEditing ? (
+                                  <div className="flex items-center gap-1">
+                                    <button onClick={saveVerbaEdit} className="text-green-600 hover:bg-green-50 p-1 rounded"><Check className="w-4 h-4" /></button>
+                                    <button onClick={() => setEditingVerba(null)} className="text-gray-400 hover:bg-gray-100 p-1 rounded"><X className="w-4 h-4" /></button>
+                                  </div>
+                                ) : (
+                                  <button 
+                                    onClick={() => handleEditVerba(i, j, v)}
+                                    className="text-gray-400 hover:text-blue-600 transition-colors ml-2"
+                                    title="Editar Regra"
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </div>
                             </td>
                           </tr>
-                        ))}
+                        )})}
                       </tbody>
                     </table>
                   </div>

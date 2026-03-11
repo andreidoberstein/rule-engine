@@ -25,8 +25,8 @@ export class UsersService {
     });
   }
 
-  async findAll(): Promise<UserEntity[]> {
-    return this.usersRepository.findAll();
+  async findAll(options?: { cursor?: string; take?: number }): Promise<{ data: UserEntity[], nextCursor: string | null }> {
+    return this.usersRepository.findAll(options);
   }
 
   async findByEmail(email: string): Promise<UserEntity | null> {

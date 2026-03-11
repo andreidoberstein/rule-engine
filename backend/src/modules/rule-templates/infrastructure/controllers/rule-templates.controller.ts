@@ -48,12 +48,16 @@ export class RuleTemplatesController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a rule template' })
+  @ApiResponse({ status: 200, description: 'Rule template updated successfully.' })
+  @ApiResponse({ status: 404, description: 'Rule template not found.' })
   update(@Param('id') id: string, @Body() updateRuleTemplateDto: UpdateRuleTemplateDto) {
     return this.ruleTemplatesService.update(id, updateRuleTemplateDto);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a rule template' })
+  @ApiResponse({ status: 200, description: 'Rule template deleted successfully.' })
+  @ApiResponse({ status: 404, description: 'Rule template not found.' })
   remove(@Param('id') id: string) {
     return this.ruleTemplatesService.remove(id);
   }

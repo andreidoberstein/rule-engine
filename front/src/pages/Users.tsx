@@ -3,18 +3,16 @@ import { Search, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import Layout from '../components/Layout';
 
-interface Client {
+interface User {
   id: string;
-  client_code: string;
-  client_name: string;
-  document: string;
+  name: string;
   email: string;
-  job_codes: string;
-  new_format_flag: boolean;
+  role: string;
+  is_active: boolean;
 }
 
-export default function Clients() {
-  const [clients, setClients] = useState<Client[]>([]);
+export default function Users() {
+  const [users, setUsers] = useState<User[]>([]);
   const [cursors, setCursors] = useState<string[]>([]); // Stack of cursors for "Previous"
   const [currentCursor, setCurrentCursor] = useState<string | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -23,34 +21,31 @@ export default function Clients() {
   // Create Modal States
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createForm, setCreateForm] = useState({
-    client_code: '',
-    client_name: '',
-    document: '',
+    name: '',
     email: '',
-    job_codes: '',
-    new_format_flag: false
+    password: '',
+    role: 'USER',
+    is_active: true
   });
 
   // Edit Modal States
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editForm, setEditForm] = useState({
-    client_code: '',
-    client_name: '',
-    document: '',
+    name: '',
     email: '',
-    job_codes: '',
-    new_format_flag: false
+    role: '',
+    is_active: true
   });
 
   // Delete Modal States
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [clientToDeleteId, setClientToDeleteId] = useState<string | null>(null);
+  const [userToDeleteId, setUserToDeleteId] = useState<string | null>(null);
 
-  const fetchClients = async (cursor: string | null) => {
+  const fetchUsers = async (cursor: string | null) => {
     try {
       setIsLoading(true);
-      const url = new URL('http://localhost:3000/clients');
+      const url = new URL('http://localhost:3000/users');
       url.searchParams.append('take', '5');
       if (cursor) {
         url.searchParams.append('cursor', cursor);
@@ -59,17 +54,42 @@ export default function Clients() {
       const response = await fetch(url.toString());
       const res = await response.json();
       
-      setClients(res.data);
+      setUsers(res.data);
       setNextCursor(res.nextCursor);
     } catch (error) {
-      toast.error('Erro ao carregar clientes');
+      toast.error('Erro ao buscar usuários');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleCreateUser = async () => {
+    if (!createForm.name || !createForm.email || !createForm.password) {
+      toast.error('Preencha os campos obrigatórios.');
+      return;
+    }
+    try {
+      const res = await fetch('http://localhost:3000/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(createForm),
+      });
+      if (res.ok) {
+        setIsCreateModalOpen(false);
+        setCreateForm({ name: '', email: '', password: '', role: 'USER', is_active: true });
+        fetchUsers(null); // Reset to first page
+        toast.success('Usuário criado com sucesso!');
+      } else {
+        const err = await res.json();
+        toast.error('Erro ao criar: ' + (err.message || 'Desconhecido'));
+      }
+    } catch (e) {
+      toast.error('Erro de conexão ao criar usuário.');
+    }
+  };
+
   useEffect(() => {
-    fetchClients(currentCursor);
+    fetchUsers(currentCursor);
   }, [currentCursor]);
 
   const handleNext = () => {
@@ -88,127 +108,77 @@ export default function Clients() {
     }
   };
 
-  const handleCreateClient = async () => {
-    if (!createForm.client_name || !createForm.client_code || !createForm.document) {
-      toast.error('Preencha os campos obrigatórios.');
-      return;
-    }
-
-    const userStr = localStorage.getItem('user');
-    const user = userStr ? JSON.parse(userStr) : null;
-
-    if (!user || !user.id) {
-      toast.error('Usuário não autenticado. Faça login novamente.');
-      return;
-    }
-
-    try {
-      const payload = {
-        ...createForm,
-        created_by: user.id
-      };
-
-      const res = await fetch('http://localhost:3000/clients', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (res.ok) {
-        setIsCreateModalOpen(false);
-        setCreateForm({
-          client_code: '',
-          client_name: '',
-          document: '',
-          email: '',
-          job_codes: '',
-          new_format_flag: false
-        });
-        fetchClients(null); // Reset to first page
-        toast.success('Cliente criado com sucesso!');
-      } else {
-        const err = await res.json();
-        toast.error('Erro ao criar: ' + (err.message || 'Desconhecido'));
-      }
-    } catch (e) {
-      toast.error('Erro de conexão ao criar cliente.');
-    }
-  };
-
-  const handleEditClick = (client: Client) => {
-    setEditingClient(client);
+  const handleEditClick = (user: User) => {
+    setEditingUser(user);
     setEditForm({
-      client_code: client.client_code,
-      client_name: client.client_name,
-      document: client.document,
-      email: client.email,
-      job_codes: client.job_codes,
-      new_format_flag: client.new_format_flag
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      is_active: user.is_active,
     });
     setIsEditModalOpen(true);
   };
 
-  const handleUpdateClient = async () => {
-    if (!editingClient) return;
+  const handleUpdateUser = async () => {
+    if (!editingUser) return;
     try {
-      const res = await fetch(`http://localhost:3000/clients/${editingClient.id}`, {
+      const res = await fetch(`http://localhost:3000/users/${editingUser.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editForm),
       });
       if (res.ok) {
         setIsEditModalOpen(false);
-        fetchClients(currentCursor);
-        toast.success('Cliente atualizado com sucesso!');
+        fetchUsers(currentCursor);
+        toast.success('Usuário atualizado com sucesso!');
       } else {
         const err = await res.json();
         toast.error('Erro ao atualizar: ' + (err.message || 'Desconhecido'));
       }
     } catch (e) {
-      toast.error('Erro de conexão ao atualizar cliente.');
+      toast.error('Erro de conexão ao atualizar usuário.');
     }
   };
 
   const handleDeleteClick = (id: string) => {
-    setClientToDeleteId(id);
+    setUserToDeleteId(id);
     setIsDeleteModalOpen(true);
   };
 
   const confirmDelete = async () => {
-    if (!clientToDeleteId) return;
+    if (!userToDeleteId) return;
     try {
-      const res = await fetch(`http://localhost:3000/clients/${clientToDeleteId}`, {
+      const res = await fetch(`http://localhost:3000/users/${userToDeleteId}`, {
         method: 'DELETE',
       });
       if (res.ok) {
         setIsDeleteModalOpen(false);
-        fetchClients(currentCursor);
-        toast.success('Cliente excluído com sucesso!');
+        fetchUsers(currentCursor);
+        toast.success('Usuário excluído com sucesso!');
       } else {
         const err = await res.json();
         toast.error('Erro ao excluir: ' + (err.message || 'Desconhecido'));
       }
     } catch (e) {
-      toast.error('Erro de conexão ao excluir cliente.');
+      toast.error('Erro de conexão ao excluir usuário.');
     }
   };
 
   return (
     <Layout 
-      title="Clientes" 
-      subtitle="Gerencie seus clientes cadastrados"
+      title="Usuários" 
+      subtitle="Gerencie os usuários do sistema"
     >
-      {/* Header action right aligned, handled by absolute positioning or relative to a wrapper */}
       <div className="absolute top-[108px] right-8">
         <button 
           onClick={() => setIsCreateModalOpen(true)}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition-colors"
         >
-          <span className="text-lg leading-none">+</span> Novo Cliente
+          <span className="text-lg leading-none">+</span> Novo Usuário
         </button>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mt-2">
-        {/* Toolbar */}
         <div className="p-4 border-b border-gray-100 flex justify-between items-center">
           <div className="relative w-96">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -216,58 +186,55 @@ export default function Clients() {
             </div>
             <input
               type="text"
-              placeholder="Buscar cliente..."
+              placeholder="Buscar usuário..."
               className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
             />
           </div>
         </div>
 
-        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100 text-xs text-gray-500 font-semibold uppercase tracking-wider">
-                <th className="px-6 py-4">Código</th>
-                <th className="px-6 py-4">Nome / Razão Social</th>
-                <th className="px-6 py-4">CNPJ</th>
+                <th className="px-6 py-4">Nome</th>
                 <th className="px-6 py-4">E-mail</th>
-                <th className="px-6 py-4">Jobs</th>
-                <th className="px-6 py-4">Novo Formato</th>
+                <th className="px-6 py-4">Perfil</th>
+                <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4 text-center">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
-                    Carregando clientes...
+                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                    Carregando usuários...
                   </td>
                 </tr>
-              ) : clients.length === 0 ? (
+              ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
-                    Nenhum cliente encontrado.
+                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                    Nenhum usuário encontrado.
                   </td>
                 </tr>
               ) : (
-                clients.map((client) => (
-                  <tr key={client.id} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">{client.client_code}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{client.client_name}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{client.document}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{client.email}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{client.job_codes}</td>
+                users.map((user) => (
+                  <tr key={user.id} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">{user.name}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{user.email}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {user.role === 'ADMIN' ? 'Administrador' : 'Usuário'}
+                    </td>
                     <td className="px-6 py-4 text-sm">
-                      <span className={`font-medium ${client.new_format_flag ? 'text-emerald-500' : 'text-gray-500'}`}>
-                        {client.new_format_flag ? 'Sim' : 'Não'}
+                      <span className={`font-medium ${user.is_active ? 'text-emerald-500' : 'text-red-500'}`}>
+                        {user.is_active ? 'Ativo' : 'Inativo'}
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center gap-3">
-                        <button onClick={() => handleEditClick(client)} className="text-gray-400 hover:text-blue-600 transition-colors">
+                        <button onClick={() => handleEditClick(user)} className="text-gray-400 hover:text-blue-600 transition-colors">
                           <Pencil size={18} />
                         </button>
-                        <button onClick={() => handleDeleteClick(client.id)} className="text-gray-400 hover:text-red-600 transition-colors">
+                        <button onClick={() => handleDeleteClick(user.id)} className="text-gray-400 hover:text-red-600 transition-colors">
                           <Trash2 size={18} />
                         </button>
                       </div>
@@ -279,10 +246,9 @@ export default function Clients() {
           </table>
         </div>
 
-        {/* Pagination Controls */}
         <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
           <p className="text-sm text-gray-500">
-            Mostrando <span className="font-semibold text-gray-900">{clients.length}</span> registros
+            Mostrando <span className="font-semibold text-gray-900">{users.length}</span> registros
           </p>
           <div className="flex gap-2">
             <button
@@ -306,44 +272,24 @@ export default function Clients() {
       {/* CREATE MODAL */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/80">
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 w-[600px] max-w-full">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 w-[500px] max-w-full">
             <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-              <span className="text-blue-600 text-2xl font-normal leading-none">+</span> Novo Cliente
+              <span className="text-blue-600 text-2xl font-normal leading-none">+</span> Novo Usuário
             </h3>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Código do Cliente*</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nome*</label>
                 <input
                   type="text"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 shadow-sm"
-                  value={createForm.client_code}
-                  onChange={e => setCreateForm({...createForm, client_code: e.target.value})}
+                  value={createForm.name}
+                  onChange={e => setCreateForm({...createForm, name: e.target.value})}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nome / Razão Social*</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 shadow-sm"
-                  value={createForm.client_name}
-                  onChange={e => setCreateForm({...createForm, client_name: e.target.value})}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">CNPJ*</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 shadow-sm"
-                  value={createForm.document}
-                  onChange={e => setCreateForm({...createForm, document: e.target.value})}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">E-mail*</label>
                 <input
                   type="email"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 shadow-sm"
@@ -352,29 +298,41 @@ export default function Clients() {
                 />
               </div>
 
-              <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Jobs Relacionados (Separados por vírgula)</label>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Senha*</label>
                 <input
-                  type="text"
+                  type="password"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 shadow-sm"
-                  value={createForm.job_codes}
-                  onChange={e => setCreateForm({...createForm, job_codes: e.target.value})}
+                  value={createForm.password}
+                  onChange={e => setCreateForm({...createForm, password: e.target.value})}
                 />
               </div>
 
-              <div className="col-span-2 flex items-center gap-2 pt-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Perfil</label>
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 shadow-sm"
+                  value={createForm.role}
+                  onChange={e => setCreateForm({...createForm, role: e.target.value})}
+                >
+                  <option value="USER">Usuário</option>
+                  <option value="ADMIN">Administrador</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
                 <input
                   type="checkbox"
-                  id="newFormatFlagCreate"
-                  checked={createForm.new_format_flag}
-                  onChange={e => setCreateForm({...createForm, new_format_flag: e.target.checked})}
+                  id="isActiveNewUser"
+                  checked={createForm.is_active}
+                  onChange={e => setCreateForm({...createForm, is_active: e.target.checked})}
                   className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
-                <label htmlFor="newFormatFlagCreate" className="text-sm font-medium text-gray-700">Utiliza Novo Formato?</label>
+                <label htmlFor="isActiveNewUser" className="text-sm font-medium text-gray-700">Usuário Ativo</label>
               </div>
             </div>
 
-            <div className="mt-8 flex justify-end gap-3">
+            <div className="mt-6 flex justify-end gap-3">
               <button 
                 onClick={() => setIsCreateModalOpen(false)}
                 className="px-4 py-2 font-medium text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
@@ -382,10 +340,10 @@ export default function Clients() {
                 Cancelar
               </button>
               <button 
-                onClick={handleCreateClient}
+                onClick={handleCreateUser}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
               >
-                Criar Cliente
+                Criar Usuário
               </button>
             </div>
           </div>
@@ -395,39 +353,19 @@ export default function Clients() {
       {/* EDIT MODAL */}
       {isEditModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/80">
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 w-[600px] max-w-full">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 w-[500px] max-w-full">
             <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-              <Pencil className="w-5 h-5 text-blue-600" /> Editar Cliente
+              <Pencil className="w-5 h-5 text-blue-600" /> Editar Usuário
             </h3>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Código do Cliente</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
                 <input
                   type="text"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 shadow-sm"
-                  value={editForm.client_code}
-                  onChange={e => setEditForm({...editForm, client_code: e.target.value})}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nome / Razão Social</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 shadow-sm"
-                  value={editForm.client_name}
-                  onChange={e => setEditForm({...editForm, client_name: e.target.value})}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">CNPJ</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 shadow-sm"
-                  value={editForm.document}
-                  onChange={e => setEditForm({...editForm, document: e.target.value})}
+                  value={editForm.name}
+                  onChange={e => setEditForm({...editForm, name: e.target.value})}
                 />
               </div>
 
@@ -441,29 +379,31 @@ export default function Clients() {
                 />
               </div>
 
-              <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Jobs Relacionados (Separados por vírgula)</label>
-                <input
-                  type="text"
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Perfil</label>
+                <select
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 shadow-sm"
-                  value={editForm.job_codes}
-                  onChange={e => setEditForm({...editForm, job_codes: e.target.value})}
-                />
+                  value={editForm.role}
+                  onChange={e => setEditForm({...editForm, role: e.target.value})}
+                >
+                  <option value="USER">Usuário</option>
+                  <option value="ADMIN">Administrador</option>
+                </select>
               </div>
 
-              <div className="col-span-2 flex items-center gap-2 pt-2">
+              <div className="flex items-center gap-2 pt-2">
                 <input
                   type="checkbox"
-                  id="newFormatFlag"
-                  checked={editForm.new_format_flag}
-                  onChange={e => setEditForm({...editForm, new_format_flag: e.target.checked})}
+                  id="isActiveUser"
+                  checked={editForm.is_active}
+                  onChange={e => setEditForm({...editForm, is_active: e.target.checked})}
                   className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
-                <label htmlFor="newFormatFlag" className="text-sm font-medium text-gray-700">Utiliza Novo Formato?</label>
+                <label htmlFor="isActiveUser" className="text-sm font-medium text-gray-700">Usuário Ativo</label>
               </div>
             </div>
 
-            <div className="mt-8 flex justify-end gap-3">
+            <div className="mt-6 flex justify-end gap-3">
               <button 
                 onClick={() => setIsEditModalOpen(false)}
                 className="px-4 py-2 font-medium text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
@@ -471,7 +411,7 @@ export default function Clients() {
                 Cancelar
               </button>
               <button 
-                onClick={handleUpdateClient}
+                onClick={handleUpdateUser}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
               >
                 Salvar Alterações
@@ -489,7 +429,7 @@ export default function Clients() {
               <Trash2 className="w-5 h-5" /> Confirmar Exclusão
             </h3>
             <p className="text-sm text-gray-600 mb-6">
-              Tem certeza que deseja remover este cliente? Esta ação não pode ser desfeita.
+              Tem certeza que deseja remover este usuário? Esta ação não pode ser desfeita.
             </p>
             <div className="flex justify-end gap-3">
               <button 
